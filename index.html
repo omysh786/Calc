@@ -290,9 +290,38 @@
     .admin-legal-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
     .admin-legal-tabs button { background: #132033; border: 1px solid #24344c; color: #c9d4e5; border-radius: 999px; padding: 8px 12px; font-weight: 700; }
     .admin-legal-tabs button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .admin-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+    .admin-filters button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .geo-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .geo-table th, .geo-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #334155; color: #f1f5f9; font-size: 13px; }
+    .geo-table th { color: #cbd5e1; font-size: 12px; }
+    .geo-bar-wrap { background: #1e293b; border-radius: 99px; height: 8px; overflow: hidden; min-width: 80px; }
+    .geo-bar { height: 8px; background: linear-gradient(90deg, #14b8a6, #0ea5e9); border-radius: 99px; }
 
     /* Admin */
-    #admin-root { position: fixed; inset: 0; z-index: 90; background: #0b1220; color: #e8eef7; display: grid; grid-template-columns: 260px 1fr; }
+    #admin-root, #admin-login { color-scheme: dark; }
+    #admin-login, #admin-login h1, #admin-login p, #admin-login label, #admin-login span { color: #f1f5f9; }
+    #admin-login .muted, #admin-login .hint, #admin-login .error-msg { color: #e2e8f0 !important; }
+    #admin-root { position: fixed; inset: 0; z-index: 90; background: #0b1220; color: #f1f5f9; display: grid; grid-template-columns: 260px 1fr; }
+    #admin-root, #admin-root .admin-body, #admin-root .admin-top, #admin-root .admin-side {
+      color: #f1f5f9;
+    }
+    #admin-root h1, #admin-root h2, #admin-root h3, #admin-root h4, #admin-root p,
+    #admin-root li, #admin-root strong, #admin-root span, #admin-root label {
+      color: #f1f5f9;
+    }
+    #admin-root .muted, #admin-root .hint, #admin-root .char-count { color: #cbd5e1 !important; }
+    #admin-root a { color: #7dd3fc; }
+    #admin-root input, #admin-root select, #admin-root textarea,
+    #admin-login input, #admin-login select, #admin-login textarea {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border: 1px solid #64748b !important;
+      caret-color: #fff;
+    }
+    #admin-root input::placeholder, #admin-root textarea::placeholder,
+    #admin-login input::placeholder { color: #94a3b8 !important; }
+    #admin-root option { background: #1e293b; color: #f8fafc; }
     .admin-side { background: #07101c; border-right: 1px solid #1e2a3c; display: flex; flex-direction: column; min-height: 0; }
     .admin-brand { padding: 18px 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
     .admin-search { margin: 0 12px 10px; }
@@ -316,12 +345,12 @@
     .chart-bar span { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #9bb; }
     .form-grid { display: grid; gap: 12px; }
     .form-grid.two { grid-template-columns: 1fr 1fr; }
-    .admin-field label { display: block; font-size: 12px; font-weight: 750; margin-bottom: 6px; color: #b7c4d6; }
+    .admin-field label { display: block; font-size: 12px; font-weight: 750; margin-bottom: 6px; color: #e2e8f0 !important; }
     .admin-field input, .admin-field select, .admin-field textarea {
-      width: 100%; background: #0b1624; border: 1px solid #2a3c56; color: #fff; border-radius: 10px; padding: 10px 12px;
+      width: 100%; background: #1e293b; border: 1px solid #64748b; color: #f8fafc; border-radius: 10px; padding: 10px 12px;
     }
     .admin-field textarea { min-height: 90px; font-family: var(--mono); font-size: 12px; }
-    .admin-field textarea[data-path*="legal."] { min-height: 320px; }
+    .admin-field textarea[data-path*="legal."] { min-height: 320px; white-space: pre-wrap; }
     .toggle { display: flex; align-items: center; gap: 8px; }
     .switch { width: 42px; height: 24px; border-radius: 99px; background: #334155; position: relative; border: 0; }
     .switch.on { background: var(--primary); }
@@ -456,7 +485,8 @@
     encFlagKey: "stc_enc_v1",
     defaultUser: "poradmin",
     defaultHash: "28bada190ec90adbf954933dcc289fce9548ae7b4935cee963d33d494d4bb4d2",
-    hashPrefix: "stc.v1|"
+    hashPrefix: "stc.v1|",
+    usersKey: "stc_users_v1"
   };
 
   var DEFAULTS = {
@@ -711,6 +741,11 @@
       adsterraEnabled: false,
       adsterraCode: "",
       note: "Advertising networks require their own verification and approval. Paste code only after your account is approved. This site will not generate fake clicks or impressions.",
+      placementMode: "auto",
+      customCSS: "",
+      linkUrl: "",
+      linkLabel: "Advertisement",
+      linkImage: "",
       slots: [
         { id: "AD_SLOT_TOP", label: "Top", enabled: false, provider: "custom", code: "", desktop: true, mobile: true },
         { id: "AD_SLOT_BELOW_CALCULATOR", label: "Below calculator", enabled: false, provider: "custom", code: "", desktop: true, mobile: true },
@@ -861,6 +896,37 @@
   function setCred(user, hash) {
     lsSet(APP.credKey, JSON.stringify({ user: user, hash: hash }));
   }
+  function allPermIds() {
+    return NAV.filter(function (n) { return n.id !== "logout"; }).map(function (n) { return n.id; });
+  }
+  function listUsers() {
+    try {
+      var raw = lsGet(APP.usersKey);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch (e) {}
+    if (state.cfg && Array.isArray(state.cfg.users) && state.cfg.users.length) return state.cfg.users;
+    if (state.draft && Array.isArray(state.draft.users) && state.draft.users.length) return state.draft.users;
+    var cred = getCred();
+    return [{ id: "owner", username: cred.user, hash: cred.hash, role: "owner", permissions: ["all"], enabled: true }];
+  }
+  function persistUsers(arr) {
+    lsSet(APP.usersKey, JSON.stringify(arr));
+    if (state.cfg) state.cfg.users = arr;
+    if (state.draft) state.draft.users = arr;
+  }
+  function canAccess(page) {
+    var s = state.session;
+    if (!s) return false;
+    if (s.role === "owner" || (s.permissions && s.permissions.indexOf("all") !== -1)) return true;
+    var perms = s.permissions || [];
+    if (!perms.length) return true;
+    if (page === "logout") return true;
+    if (page === "preview") return perms.indexOf("preview") !== -1 || perms.indexOf("dashboard") !== -1;
+    return perms.indexOf(page) !== -1;
+  }
   async function deriveKey(password, saltB64) {
     var salt = saltB64 ? Uint8Array.from(atob(saltB64), function (c) { return c.charCodeAt(0); }) : crypto.getRandomValues(new Uint8Array(16));
     var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
@@ -958,8 +1024,8 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
   function loadStats() {
-    try { return JSON.parse(lsGet(APP.statsKey) || "null") || { pageLoads: 0, calcUses: 0, byDate: {}, devices: {}, referrers: {} }; }
-    catch (e) { return { pageLoads: 0, calcUses: 0, byDate: {}, devices: {}, referrers: {} }; }
+    try { return JSON.parse(lsGet(APP.statsKey) || "null") || { pageLoads: 0, calcUses: 0, byDate: {}, devices: {}, referrers: {}, countries: {} }; }
+    catch (e) { return { pageLoads: 0, calcUses: 0, byDate: {}, devices: {}, referrers: {}, countries: {} }; }
   }
   function saveStats(s) { lsSet(APP.statsKey, JSON.stringify(s)); }
   function deviceCat() {
@@ -968,23 +1034,181 @@
     if (w < 1024) return "tablet";
     return "desktop";
   }
+  function dayBucket(s, k) {
+    s.byDate[k] = s.byDate[k] || { visits: 0, calc: 0, countries: {}, devices: {}, referrers: {} };
+    s.byDate[k].countries = s.byDate[k].countries || {};
+    s.byDate[k].devices = s.byDate[k].devices || {};
+    s.byDate[k].referrers = s.byDate[k].referrers || {};
+    return s.byDate[k];
+  }
   function bumpStat(kind) {
     if (!state.cfg || !state.cfg.analytics.localEnabled) return;
     var s = loadStats();
     var k = todayKey();
-    s.byDate[k] = s.byDate[k] || { visits: 0, calc: 0 };
+    var row = dayBucket(s, k);
     if (kind === "visit") {
       s.pageLoads += 1;
-      s.byDate[k].visits += 1;
+      row.visits += 1;
       var d = deviceCat();
       s.devices[d] = (s.devices[d] || 0) + 1;
+      row.devices[d] = (row.devices[d] || 0) + 1;
       var ref = document.referrer ? (function () { try { return new URL(document.referrer).hostname; } catch (e) { return "other"; } })() : "direct";
       s.referrers[ref] = (s.referrers[ref] || 0) + 1;
+      row.referrers[ref] = (row.referrers[ref] || 0) + 1;
     } else if (kind === "calc") {
       s.calcUses += 1;
-      s.byDate[k].calc += 1;
+      row.calc += 1;
     }
     saveStats(s);
+  }
+  function flagEmoji(cc) {
+    cc = String(cc || "").toUpperCase();
+    if (!/^[A-Z]{2}$/.test(cc)) return "";
+    return String.fromCodePoint(cc.charCodeAt(0) - 65 + 0x1F1E6, cc.charCodeAt(1) - 65 + 0x1F1E6);
+  }
+  function tzCountryGuess() {
+    var tz = "";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return null; }
+    var map = {
+      "Asia/Karachi": ["PK", "Pakistan"], "Asia/Calcutta": ["IN", "India"], "Asia/Kolkata": ["IN", "India"],
+      "Asia/Dubai": ["AE", "United Arab Emirates"], "Asia/Riyadh": ["SA", "Saudi Arabia"],
+      "Asia/Tokyo": ["JP", "Japan"], "Asia/Shanghai": ["CN", "China"], "Asia/Singapore": ["SG", "Singapore"],
+      "Asia/Hong_Kong": ["HK", "Hong Kong"], "Asia/Seoul": ["KR", "South Korea"],
+      "Europe/London": ["GB", "United Kingdom"], "Europe/Paris": ["FR", "France"], "Europe/Berlin": ["DE", "Germany"],
+      "Europe/Madrid": ["ES", "Spain"], "Europe/Rome": ["IT", "Italy"], "Europe/Amsterdam": ["NL", "Netherlands"],
+      "Europe/Istanbul": ["TR", "Turkey"], "Europe/Moscow": ["RU", "Russia"],
+      "America/New_York": ["US", "United States"], "America/Chicago": ["US", "United States"],
+      "America/Denver": ["US", "United States"], "America/Los_Angeles": ["US", "United States"],
+      "America/Toronto": ["CA", "Canada"], "America/Sao_Paulo": ["BR", "Brazil"],
+      "America/Mexico_City": ["MX", "Mexico"], "Australia/Sydney": ["AU", "Australia"],
+      "Africa/Cairo": ["EG", "Egypt"], "Africa/Lagos": ["NG", "Nigeria"], "Africa/Johannesburg": ["ZA", "South Africa"]
+    };
+    if (map[tz]) return { code: map[tz][0], name: map[tz][1] };
+    if (tz.indexOf("America/") === 0) return { code: "US", name: "United States" };
+    if (tz.indexOf("Europe/") === 0) return { code: "EU", name: "Europe" };
+    if (tz.indexOf("Asia/") === 0) return { code: "AS", name: "Asia" };
+    return tz ? { code: "UN", name: tz } : null;
+  }
+  function addCountryHit(code, name) {
+    code = String(code || "UN").toUpperCase().slice(0, 2);
+    if (!/^[A-Z]{2}$/.test(code)) code = "UN";
+    name = name || code;
+    var s = loadStats();
+    var row = dayBucket(s, todayKey());
+    row.countries[code] = (row.countries[code] || 0) + 1;
+    s.countries = s.countries || {};
+    s.countries[code] = s.countries[code] || { name: name, visits: 0 };
+    s.countries[code].name = name;
+    s.countries[code].visits += 1;
+    saveStats(s);
+  }
+  function recordGeo() {
+    try {
+      if (!state.cfg || !state.cfg.analytics.localEnabled) return;
+      var consent = getConsent();
+      if (consent && consent.analytics === false) return;
+      if (ssGet("stc_geo_once")) return;
+      ssSet("stc_geo_once", "1");
+      var done = false;
+      function finish(code, name) {
+        if (done) return;
+        done = true;
+        if (code) addCountryHit(code, name);
+      }
+      function fallbackTz() {
+        var g = tzCountryGuess();
+        if (g) finish(g.code, g.name);
+        else finish("UN", "Unknown");
+      }
+      if (typeof fetch !== "function") { fallbackTz(); return; }
+      fetch("https://get.geojs.io/v1/ip/geo.json")
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (j) {
+          var code = String(j.country_code || "").toUpperCase();
+          if (!code) throw new Error("no country");
+          finish(code, j.country || code);
+        })
+        .catch(function () {
+          return fetch("https://ipapi.co/json/")
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+            .then(function (j) {
+              var code2 = String(j.country_code || "").toUpperCase();
+              if (!code2) throw new Error("no country");
+              finish(code2, j.country_name || j.country || code2);
+            });
+        })
+        .catch(fallbackTz);
+    } catch (e) {
+      var g2 = tzCountryGuess();
+      if (g2) addCountryHit(g2.code, g2.name);
+    }
+  }
+  function startOfDay(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return x;
+  }
+  function ymdToDate(s) {
+    var p = String(s || "").split("-");
+    if (p.length < 3) return startOfDay(new Date());
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  function dashRange() {
+    var now = startOfDay(new Date());
+    var f = state.dashFilter || "week";
+    if (f === "today") return { from: now, to: now };
+    if (f === "yesterday") {
+      var y = new Date(now); y.setDate(y.getDate() - 1);
+      return { from: y, to: y };
+    }
+    if (f === "week") {
+      var w = new Date(now); w.setDate(w.getDate() - 6);
+      return { from: w, to: now };
+    }
+    if (f === "month") {
+      var first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      var last = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { from: first, to: last };
+    }
+    if (f === "custom") {
+      var a = state.dashFrom ? ymdToDate(state.dashFrom) : new Date(now.getTime() - 6 * 86400000);
+      var b = state.dashTo ? ymdToDate(state.dashTo) : now;
+      if (a > b) { var t = a; a = b; b = t; }
+      return { from: a, to: b };
+    }
+    return { from: now, to: now };
+  }
+  function collectRange(from, to) {
+    var s = loadStats();
+    var visits = 0, calc = 0, countries = {}, devices = {}, referrers = {}, days = [];
+    var d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    var end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    while (d <= end) {
+      var k = todayKey(d);
+      var row = s.byDate[k] || { visits: 0, calc: 0, countries: {}, devices: {}, referrers: {} };
+      visits += row.visits || 0;
+      calc += row.calc || 0;
+      days.push({
+        k: k,
+        label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        visits: row.visits || 0,
+        calc: row.calc || 0
+      });
+      Object.keys(row.countries || {}).forEach(function (code) {
+        var n = row.countries[code];
+        var num = typeof n === "number" ? n : (n && n.visits) || 0;
+        countries[code] = countries[code] || { code: code, name: (s.countries && s.countries[code] && s.countries[code].name) || code, visits: 0 };
+        countries[code].visits += num;
+      });
+      Object.keys(row.devices || {}).forEach(function (dev) {
+        devices[dev] = (devices[dev] || 0) + row.devices[dev];
+      });
+      Object.keys(row.referrers || {}).forEach(function (ref) {
+        referrers[ref] = (referrers[ref] || 0) + row.referrers[ref];
+      });
+      d.setDate(d.getDate() + 1);
+    }
+    var countryList = Object.keys(countries).map(function (c) { return countries[c]; }).sort(function (a, b) { return b.visits - a.visits; });
+    return { visits: visits, calc: calc, days: days, countries: countryList, devices: devices, referrers: referrers, allVisits: s.pageLoads || 0, allCalc: s.calcUses || 0 };
   }
   function gtagEvent(name, params) {
     try {
@@ -1076,11 +1300,53 @@
       old.parentNode.replaceChild(s, old);
     });
   }
+  function linkAdHtml(url, img, label) {
+    url = String(url || "").trim();
+    img = String(img || "").trim();
+    label = label || "Advertisement";
+    if (!url && !img) return "";
+    var inner = img
+      ? '<img src="' + esc(img) + '" alt="' + esc(label) + '" style="max-width:100%;height:auto;display:block;margin:0 auto">'
+      : esc(label);
+    if (!url) return inner;
+    var href = safeUrl(url);
+    if (href === "#") href = url;
+    return '<a class="ad-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer sponsored">' + inner + "</a>";
+  }
+  function isAutoAds() {
+    return !state.cfg.ads.placementMode || state.cfg.ads.placementMode === "auto";
+  }
+  function isStandardSlot(id) {
+    return { AD_SLOT_TOP: 1, AD_SLOT_BELOW_CALCULATOR: 1, AD_SLOT_RESULTS: 1, AD_SLOT_CONTENT: 1, AD_SLOT_FOOTER: 1 }[id];
+  }
   function slotCode(slot) {
-    if (!slot || !slot.enabled) return "";
-    if (slot.provider === "adsense" && state.cfg.ads.adsenseCode) return state.cfg.ads.adsenseCode;
-    if (slot.provider === "adsterra" && state.cfg.ads.adsterraCode) return state.cfg.ads.adsterraCode;
-    return slot.code || "";
+    if (!slot) return "";
+    var a = state.cfg.ads;
+    var auto = isAutoAds();
+    if (!slot.enabled && !(auto && isStandardSlot(slot.id))) return "";
+    if (slot.code && String(slot.code).trim()) return slot.code;
+    if (slot.linkUrl || slot.linkImage) return linkAdHtml(slot.linkUrl, slot.linkImage, slot.label || a.linkLabel);
+    if (slot.provider === "adsense" && a.adsenseCode) return a.adsenseCode;
+    if (slot.provider === "adsterra" && a.adsterraCode) return a.adsterraCode;
+    if (auto) {
+      if (a.adsenseEnabled && a.adsenseCode) return a.adsenseCode;
+      if (a.adsterraEnabled && a.adsterraCode) return a.adsterraCode;
+      if (a.linkUrl || a.linkImage) return linkAdHtml(a.linkUrl, a.linkImage, a.linkLabel);
+    }
+    return "";
+  }
+  function applyAdCss() {
+    var tag = el("ad-custom-css");
+    if (!tag) {
+      tag = document.createElement("style");
+      tag.id = "ad-custom-css";
+      document.head.appendChild(tag);
+    }
+    var css = (state.cfg.ads && state.cfg.ads.customCSS) || "";
+    (state.cfg.ads.slots || []).forEach(function (s) {
+      if (s.css) css += "\n" + s.css;
+    });
+    tag.textContent = css;
   }
   function canShowAds() {
     var c = getConsent();
@@ -1090,7 +1356,9 @@
   function renderAd(slotId) {
     var slot = state.cfg.ads.slots.filter(function (s) { return s.id === slotId; })[0];
     var isMobile = window.innerWidth < 768;
-    if (!slot || !slot.enabled) return "";
+    var auto = isAutoAds();
+    if (!slot) return "";
+    if (!slot.enabled && !(auto && isStandardSlot(slot.id))) return "";
     if (isMobile && !slot.mobile) return "";
     if (!isMobile && !slot.desktop) return "";
     if (!canShowAds()) return "";
@@ -1099,6 +1367,7 @@
     return '<div class="ad-slot" data-ad="' + esc(slot.id) + '"><div class="ad-label">' + esc(slot.label || "Advertisement") + '</div><div class="ad-frame" id="frame-' + esc(slot.id) + '"></div></div>';
   }
   function fillAds() {
+    applyAdCss();
     if (!canShowAds()) return;
     state.cfg.ads.slots.forEach(function (slot) {
       var frame = el("frame-" + slot.id);
@@ -1264,6 +1533,48 @@
     }).join("");
     return '<section class="section" id="faq" data-section="faq"><div class="container"><div class="section-head"><h2>' + esc(f.title) + "</h2><p class=\"muted\">" + esc(f.subtitle) + "</p></div><div class=\"faq-list\">" + items + "</div></div></section>";
   }
+  function htmlToPlain(html) {
+    return String(html || "")
+      .replace(/<h[1-3][^>]*>/gi, "\n\n")
+      .replace(/<\/h[1-3]>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "- ")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<p[^>]*>/gi, "")
+      .replace(/<\/?ul[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+  function plainToHtml(text) {
+    var raw = String(text || "").replace(/\r\n/g, "\n").trim();
+    if (!raw) return "";
+    return raw.split(/\n{2,}/).map(function (block) {
+      var lines = block.split("\n");
+      var first = lines[0] || "";
+      if (/^###\s+/.test(first)) {
+        return "<h3>" + esc(first.replace(/^###\s+/, "")) + "</h3>" + (lines.length > 1 ? "<p>" + lines.slice(1).map(esc).join("<br>") + "</p>" : "");
+      }
+      if (/^##\s+/.test(first)) {
+        return "<h2>" + esc(first.replace(/^##\s+/, "")) + "</h2>" + (lines.length > 1 ? "<p>" + lines.slice(1).map(esc).join("<br>") + "</p>" : "");
+      }
+      if (/^#\s+/.test(first)) {
+        return "<h2>" + esc(first.replace(/^#\s+/, "")) + "</h2>" + (lines.length > 1 ? "<p>" + lines.slice(1).map(esc).join("<br>") + "</p>" : "");
+      }
+      if (lines.every(function (l) { return /^[-*]\s+/.test(l) || !l.trim(); })) {
+        return "<ul>" + lines.filter(function (l) { return l.trim(); }).map(function (l) { return "<li>" + esc(l.replace(/^[-*]\s+/, "")) + "</li>"; }).join("") + "</ul>";
+      }
+      return "<p>" + lines.map(esc).join("<br>") + "</p>";
+    }).join("");
+  }
+  function renderLegalBody(doc) {
+    if (!doc) return "";
+    if (doc.text && String(doc.text).trim()) return plainToHtml(doc.text);
+    if (doc.html) return doc.html;
+    return "";
+  }
   function legalTabList() {
     return [
       { key: "privacy", hash: "privacy", label: "Privacy Policy" },
@@ -1284,8 +1595,8 @@
       return '<button type="button" role="tab" id="legal-tab-' + t.key + '" aria-controls="legal-panel-' + t.key + '" aria-selected="' + (active === t.key) + '" data-legal-tab="' + t.key + '">' + esc(L[t.key] && L[t.key].title ? L[t.key].title : t.label) + "</button>";
     }).join("");
     var panels = tabs.map(function (t) {
-      var doc = L[t.key] || { title: t.label, html: "" };
-      return '<article class="legal-panel' + (active === t.key ? " is-on" : "") + '" id="legal-panel-' + t.key + '" role="tabpanel" data-legal-panel="' + t.key + '" aria-labelledby="legal-tab-' + t.key + '"><h2>' + esc(doc.title) + "</h2>" + (doc.html || "") + "</article>";
+      var doc = L[t.key] || { title: t.label, html: "", text: "" };
+      return '<article class="legal-panel' + (active === t.key ? " is-on" : "") + '" id="legal-panel-' + t.key + '" role="tabpanel" data-legal-panel="' + t.key + '" aria-labelledby="legal-tab-' + t.key + '"><h2>' + esc(doc.title) + "</h2>" + renderLegalBody(doc) + "</article>";
     }).join("");
     return '<section class="section alt" id="legal-pages" data-section="legal-pages"><div class="container">' +
       '<div class="section-head"><h2>' + esc(L.title || "Legal") + "</h2><p class=\"muted\">" + esc(L.subtitle || "") + "</p></div>" +
@@ -1789,7 +2100,7 @@
         return '<button type="button" class="btn btn-sm ' + (t.key === key ? "btn-primary" : "btn-secondary") + '" data-legal-tab="' + t.key + '">' + esc((state.cfg.legal[t.key] && state.cfg.legal[t.key].title) || t.label) + "</button>";
       }).join("");
       root.innerHTML = '<div class="legal-page"><button class="btn btn-secondary btn-sm no-print" type="button" id="legal-back">Back to calculator</button>' +
-        '<div class="legal-tabs" role="tablist">' + buttons + "</div><h1>" + esc(L.title) + "</h1>" + (L.html || "") + "</div>";
+        '<div class="legal-tabs" role="tablist">' + buttons + "</div><h1>" + esc(L.title) + "</h1>" + renderLegalBody(L) + "</div>";
       el("legal-back").onclick = function () { showPublic(); history.replaceState(null, "", location.pathname + location.search); };
       qsa("[data-legal-tab]", root).forEach(function (b) {
         b.onclick = function () { selectLegalTab(b.getAttribute("data-legal-tab"), false); };
@@ -1853,6 +2164,7 @@
     { id: "contact", label: "Contact Form", keys: "email mailto endpoint inquiry" },
     { id: "footer", label: "Footer", keys: "copyright columns links social" },
     { id: "legal", label: "Legal Pages", keys: "privacy terms disclaimer cookie advertising" },
+    { id: "users", label: "Users", keys: "password permission role staff account" },
     { id: "privacy", label: "Privacy", keys: "cookie notice consent" },
     { id: "settings", label: "Settings", keys: "site name favicon custom css head footer" },
     { id: "security", label: "Security", keys: "password username session lock encrypt" },
@@ -1893,6 +2205,7 @@
   function renderAdminNav(filter) {
     var q = (filter || "").toLowerCase();
     el("admin-nav").innerHTML = NAV.filter(function (n) {
+      if (n.id !== "logout" && !canAccess(n.id)) return false;
       if (!q) return true;
       return (n.label + " " + n.keys).toLowerCase().indexOf(q) !== -1;
     }).map(function (n) {
@@ -1920,38 +2233,97 @@
     }
     return days;
   }
+  function renderDashboard(body, d) {
+    state.dashFilter = state.dashFilter || "week";
+    state.dashMetric = state.dashMetric || "visits";
+    var range = dashRange();
+    var data = collectRange(range.from, range.to);
+    var topCountry = data.countries[0];
+    var filt = state.dashFilter;
+    function fbtn(id, label) {
+      return '<button type="button" class="btn btn-sm btn-secondary' + (filt === id ? " active" : "") + '" data-dfilt="' + id + '">' + label + "</button>";
+    }
+    var fromStr = todayKey(range.from);
+    var toStr = todayKey(range.to);
+    var geoRows = data.countries.map(function (c) {
+      var pct = data.visits ? Math.round(c.visits / data.visits * 100) : 0;
+      return "<tr><td>" + flagEmoji(c.code) + " " + esc(c.name) + " <span class=\"muted\">(" + esc(c.code) + ")</span></td><td>" + c.visits + "</td><td>" + pct + "%</td><td><div class=\"geo-bar-wrap\"><div class=\"geo-bar\" style=\"width:" + pct + '%"></div></div></td></tr>';
+    }).join("") || '<tr><td colspan="4" class="muted">No country data in this range yet. Open the public site (not admin) so a visit can be recorded.</td></tr>';
+    var devRows = Object.keys(data.devices).map(function (k) {
+      return "<li>" + esc(k) + ": <strong>" + data.devices[k] + "</strong></li>";
+    }).join("") || "<li>No device data in this range</li>";
+    var refRows = Object.keys(data.referrers).sort(function (a, b) { return data.referrers[b] - data.referrers[a]; }).slice(0, 8).map(function (k) {
+      return "<li>" + esc(k) + ": <strong>" + data.referrers[k] + "</strong></li>";
+    }).join("") || "<li>No referrers in this range</li>";
+    body.innerHTML = '<p class="warn">Local browser statistics — counted in <strong>this browser only</strong>, not unique visitors worldwide. Country is detected anonymously (country code only, no IP stored). For real traffic and geography across all users, enable GA4 and open Google Analytics.</p>' +
+      '<div class="admin-filters">' +
+      fbtn("today", "Today") + fbtn("yesterday", "Yesterday") + fbtn("week", "Last week") + fbtn("month", "Last month") + fbtn("custom", "Custom dates") +
+      '</div>' +
+      '<div id="custom-dates" class="' + (filt === "custom" ? "" : "hidden") + '" style="display:' + (filt === "custom" ? "flex" : "none") + ';gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px">' +
+      '<div class="admin-field"><label>From</label><input type="date" id="dash-from" value="' + esc(state.dashFrom || fromStr) + '"></div>' +
+      '<div class="admin-field"><label>To</label><input type="date" id="dash-to" value="' + esc(state.dashTo || toStr) + '"></div>' +
+      '<button type="button" class="btn btn-sm btn-primary" id="dash-apply">Apply</button></div>' +
+      '<p class="hint">Showing ' + esc(fromStr) + " → " + esc(toStr) + " · local estimate</p>" +
+      '<div class="dash-cards" style="margin:14px 0">' +
+      card("Visits (range)", data.visits) +
+      card("Calculator uses (range)", data.calc) +
+      card("Countries in range", data.countries.length) +
+      card("Top country", topCountry ? (flagEmoji(topCountry.code) + " " + topCountry.name + " · " + topCountry.visits) : "—") +
+      card("All-time local visits", data.allVisits) +
+      card("All-time calculator uses", data.allCalc) +
+      card("Current theme", d.theme.mode) +
+      card("Ad status", d.ads.slots.some(function (s) { return s.enabled; }) ? "Slots enabled" : "No ads enabled") +
+      "</div>" +
+      "<h3>Visits in this period</h3>" +
+      '<div style="margin-bottom:8px"><button class="btn btn-sm btn-secondary" type="button" id="chart-v">Visits</button> <button class="btn btn-sm btn-secondary" type="button" id="chart-c">Calculator uses</button></div>' +
+      '<div class="chart" id="chart"></div>' +
+      "<h3 style=\"margin-top:28px\">Geographic data</h3>" +
+      '<p class="muted">Anonymous country counts for visits recorded here. This file cannot see every visitor on GitHub unless they hit this same browser, or you use Google Analytics.</p>' +
+      '<table class="geo-table"><thead><tr><th>Country</th><th>Visits</th><th>Share</th><th></th></tr></thead><tbody>' + geoRows + "</tbody></table>" +
+      '<div class="form-grid two" style="margin-top:18px"><div><h3>Devices</h3><ul>' + devRows + "</ul></div><div><h3>Referrers</h3><ul>" + refRows + "</ul></div></div>" +
+      '<p style="margin-top:16px"><a class="btn btn-secondary" href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">Open Google Analytics (real geo reports)</a></p>';
+    function draw(metric) {
+      state.dashMetric = metric;
+      var m = Math.max.apply(null, data.days.map(function (x) { return x[metric]; }).concat([1]));
+      var many = data.days.length > 14;
+      el("chart").innerHTML = data.days.map(function (x, i) {
+        var h = Math.max(4, Math.round(x[metric] / m * 150));
+        var lab = many && i % 2 ? "" : x.label;
+        return '<div class="chart-bar" style="height:' + h + 'px" title="' + x.label + ": " + x[metric] + '"><span>' + lab + "</span></div>";
+      }).join("");
+    }
+    draw(state.dashMetric || "visits");
+    el("chart-v").onclick = function () { draw("visits"); };
+    el("chart-c").onclick = function () { draw("calc"); };
+    qsa("[data-dfilt]", body).forEach(function (b) {
+      b.onclick = function () {
+        state.dashFilter = b.getAttribute("data-dfilt");
+        renderDashboard(body, d);
+      };
+    });
+    if (el("dash-apply")) {
+      el("dash-apply").onclick = function () {
+        state.dashFilter = "custom";
+        state.dashFrom = el("dash-from").value;
+        state.dashTo = el("dash-to").value;
+        renderDashboard(body, d);
+      };
+    }
+  }
 
   function renderAdminPage() {
     touchSession();
+    if (state.adminPage !== "logout" && !canAccess(state.adminPage)) {
+      el("admin-body").innerHTML = '<p class="warn">You do not have permission to open this section. Ask an owner to change your access under Users.</p>';
+      return;
+    }
     el("admin-title").textContent = (NAV.filter(function (n) { return n.id === state.adminPage; })[0] || { label: "Admin" }).label;
     el("dirty-chip").style.display = state.dirty ? "inline-flex" : "none";
     var d = state.draft;
     var body = el("admin-body");
     var p = state.adminPage;
     if (p === "dashboard") {
-      var st = loadStats();
-      var days = last7();
-      var today = days[days.length - 1];
-      var yest = days[days.length - 2] || { visits: 0 };
-      var week = days.reduce(function (a, x) { return a + x.visits; }, 0);
-      var max = Math.max.apply(null, days.map(function (x) { return x.visits; }).concat([1]));
-      body.innerHTML = '<p class="warn">Local browser statistics — these numbers come from this browser only. They are not unique visitors and not site-wide traffic. Use Google Analytics for real reporting.</p>' +
-        '<div class="dash-cards" style="margin:14px 0">' +
-        card("Today's local visits", today.visits) + card("Yesterday", yest.visits) + card("Last 7 days (local)", week) + card("Total local visits", st.pageLoads) +
-        card("Calculator uses (local)", st.calcUses) + card("Current theme", d.theme.mode) + card("Ad status", d.ads.slots.some(function (s) { return s.enabled; }) ? "Slots enabled" : "No ads enabled") + card("Website status", "Client-side app") +
-        "</div><h3>Last 7 days (local estimate)</h3>" +
-        '<div style="margin-bottom:8px"><button class="btn btn-sm btn-secondary" type="button" id="chart-v">Visits</button> <button class="btn btn-sm btn-secondary" type="button" id="chart-c">Calculator uses</button></div>' +
-        '<div class="chart" id="chart"></div>';
-      function draw(metric) {
-        var m = Math.max.apply(null, days.map(function (x) { return x[metric]; }).concat([1]));
-        el("chart").innerHTML = days.map(function (x) {
-          var h = Math.max(4, Math.round(x[metric] / m * 150));
-          return '<div class="chart-bar" style="height:' + h + 'px" title="' + x.label + ": " + x[metric] + '"><span>' + x.label + "</span></div>";
-        }).join("");
-      }
-      draw("visits");
-      el("chart-v").onclick = function () { draw("visits"); };
-      el("chart-c").onclick = function () { draw("calc"); };
+      renderDashboard(body, d);
       return;
     }
     if (p === "builder") {
@@ -2130,11 +2502,19 @@
     }
     if (p === "ads") {
       body.innerHTML = '<p class="warn">' + esc(d.ads.note) + "</p>" +
+        sel("Placement", "ads.placementMode", [
+          { v: "auto", l: "Automatic — best places (top, below calculator, results, content, footer)" },
+          { v: "manual", l: "Manual only — use Page Builder + slot Enable switches" }
+        ]) +
         "<h3>Google AdSense</h3>" + inp("Enable AdSense", "ads.adsenseEnabled", "toggle") +
         inp("Publisher ID", "ads.adsensePublisher") + inp("Ad Slot ID", "ads.adsenseSlot") +
         inp("Custom AdSense code", "ads.adsenseCode", "textarea") +
         "<h3>Adsterra</h3>" + inp("Enable Adsterra", "ads.adsterraEnabled", "toggle") + inp("Adsterra code", "ads.adsterraCode", "textarea") +
-        "<h3>Slots</h3><div id=\"slot-edit\"></div>";
+        "<h3>Or paste an ad link / image</h3>" +
+        inp("Ad click URL", "ads.linkUrl") + inp("Ad image URL (optional)", "ads.linkImage") + inp("Link label", "ads.linkLabel") +
+        "<h3>Ad CSS</h3><p class=\"hint\">Extra CSS for ad slots only. Example: .ad-frame{min-height:90px} .ad-link img{border-radius:12px}</p>" +
+        inp("Ad CSS", "ads.customCSS", "textarea") +
+        "<h3>Slots (Page Builder positions)</h3><p class=\"muted\">Move slots in Page Builder. In automatic mode, standard slots fill from the AdSense / Adsterra / link fields above even if a slot has no private code.</p><div id=\"slot-edit\"></div>";
       drawSlots();
       bindDraftFields(body);
       return;
@@ -2184,18 +2564,106 @@
         return '<button type="button" class="' + (state.legalEditTab === k.key ? "active" : "") + '" data-leged="' + k.key + '">' + esc(k.label) + "</button>";
       }).join("");
       var cur = state.legalEditTab;
+      var textPath = "legal." + cur + ".text";
+      if (!getPath(state.draft, textPath) && getPath(state.draft, "legal." + cur + ".html")) {
+        setPath(state.draft, textPath, htmlToPlain(getPath(state.draft, "legal." + cur + ".html")));
+      }
       body.innerHTML = inp("Show legal tabs on the website", "legal.enabled", "toggle") +
         inp("Section title", "legal.title") + inp("Section subtitle", "legal.subtitle") +
         '<div class="admin-legal-tabs">' + tabBtns + "</div>" +
         "<h3>" + esc((keys.filter(function (k) { return k.key === cur; })[0] || {}).label) + "</h3>" +
         inp("Tab title", "legal." + cur + ".title") +
-        inp("Page content (HTML)", "legal." + cur + ".html", "textarea") +
-        '<p class="warn">These are generic templates — not legal advice. Edit each tab, then Save all changes. The public Legal section and footer links update immediately after save.</p>' +
+        inp("Page content (plain text — not HTML)", textPath, "textarea") +
+        '<p class="hint">Type normal text. Blank line = new paragraph. Lines starting with - become a list. ## Heading makes a heading. The public page shows this text, not raw HTML.</p>' +
+        '<p class="warn">These are generic templates — not legal advice. Edit each tab, then Save all changes.</p>' +
         '<p class="hint">Public links: #privacy · #terms · #cookies · #disclaimer · #advertising</p>';
       qsa("[data-leged]", body).forEach(function (b) {
         b.onclick = function () { state.legalEditTab = b.getAttribute("data-leged"); renderAdminPage(); };
       });
       bindDraftFields(body);
+      return;
+    }
+    if (p === "users") {
+      var users = listUsers();
+      var permList = allPermIds();
+      var rows = users.map(function (u, i) {
+        var boxes = permList.map(function (pid) {
+          var on = u.role === "owner" || (u.permissions || []).indexOf("all") !== -1 || (u.permissions || []).indexOf(pid) !== -1;
+          var dis = u.role === "owner" ? " disabled" : "";
+          return '<label class="toggle" style="margin:4px 8px 4px 0"><input type="checkbox" data-uperm="' + i + '" data-pid="' + pid + '"' + (on ? " checked" : "") + dis + "> " + esc(pid) + "</label>";
+        }).join("");
+        return '<div class="dash-card" style="margin-bottom:12px"><strong style="color:#fff">' + esc(u.username) + "</strong> · " + esc(u.role || "staff") +
+          (u.enabled === false ? " · disabled" : "") +
+          '<div style="margin-top:8px">' + (u.role === "owner" ? '<p class="hint">Owner always has every permission.</p>' : boxes) + "</div>" +
+          (u.role === "owner" ? "" : '<div class="form-grid two" style="margin-top:8px"><div class="admin-field"><label>Set new password</label><input type="password" data-upass="' + i + '" placeholder="Leave blank to keep"></div>' +
+          '<div style="display:flex;gap:8px;align-items:end"><button class="btn btn-sm btn-primary" type="button" data-usave="' + i + '">Save user</button>' +
+          '<button class="btn btn-sm btn-danger" type="button" data-udel="' + i + '">Delete</button></div></div>') +
+          "</div>";
+      }).join("");
+      body.innerHTML = '<p class="oknote">New users and password changes work immediately — they can sign in at #admin without reloading the page. Permissions hide admin sections they must not see. This is still browser-side access, not a server.</p>' +
+        "<h3>People who can sign in</h3>" + rows +
+        "<h3>Add user</h3>" +
+        '<div class="form-grid two"><div class="admin-field"><label>Username</label><input id="nu-name" autocomplete="off"></div>' +
+        '<div class="admin-field"><label>Password (min 8 characters)</label><input id="nu-pass" type="password"></div></div>' +
+        '<p class="hint">Tick what they may open:</p><div id="nu-perms">' +
+        permList.map(function (pid) { return '<label class="toggle" style="margin:4px 8px 4px 0"><input type="checkbox" data-nuperm="' + pid + '"> ' + esc(pid) + "</label>"; }).join("") +
+        "</div>" +
+        '<div style="margin-top:12px"><button class="btn btn-primary" type="button" id="nu-add">Add user now</button></div>';
+      qsa("[data-uperm]").forEach(function (c) {
+        c.onchange = function () {
+          var i = Number(c.getAttribute("data-uperm"));
+          var pid = c.getAttribute("data-pid");
+          var u = listUsers();
+          u[i].permissions = u[i].permissions || [];
+          u[i].permissions = u[i].permissions.filter(function (x) { return x !== "all" && x !== pid; });
+          if (c.checked) u[i].permissions.push(pid);
+          persistUsers(u);
+          toast("Permissions updated — they apply on this user’s next page click.", "ok");
+        };
+      });
+      qsa("[data-usave]").forEach(function (b) {
+        b.onclick = async function () {
+          var i = Number(b.getAttribute("data-usave"));
+          var u = listUsers();
+          var pw = qs('[data-upass="' + i + '"]');
+          if (pw && pw.value) {
+            if (pw.value.length < 8) { toast("Use at least 8 characters", "err"); return; }
+            u[i].hash = await hashCred(u[i].username, pw.value);
+            persistUsers(u);
+            toast("Password updated — they can sign in with it right now.", "ok");
+            pw.value = "";
+          } else {
+            persistUsers(u);
+            toast("User saved", "ok");
+          }
+        };
+      });
+      qsa("[data-udel]").forEach(function (b) {
+        b.onclick = function () {
+          var i = Number(b.getAttribute("data-udel"));
+          modal({ title: "Delete this user?", body: "They will not be able to sign in.", danger: true, ok: "Delete", onok: function () {
+            var u = listUsers();
+            u.splice(i, 1);
+            persistUsers(u);
+            toast("User deleted", "ok");
+            renderAdminPage();
+          }});
+        };
+      });
+      el("nu-add").onclick = async function () {
+        var name = (el("nu-name").value || "").trim();
+        var pass = el("nu-pass").value || "";
+        if (!name) { toast("Enter a username", "err"); return; }
+        if (pass.length < 8) { toast("Use at least 8 characters", "err"); return; }
+        var u = listUsers();
+        if (u.some(function (x) { return x.username === name; })) { toast("That username already exists", "err"); return; }
+        var perms = qsa("[data-nuperm]").filter(function (c) { return c.checked; }).map(function (c) { return c.getAttribute("data-nuperm"); });
+        if (!perms.length) { toast("Tick at least one permission", "err"); return; }
+        u.push({ id: uid("u"), username: name, hash: await hashCred(name, pass), role: "staff", permissions: perms, enabled: true });
+        persistUsers(u);
+        toast("User added — they can open #admin and sign in right now.", "ok");
+        renderAdminPage();
+      };
       return;
     }
     if (p === "privacy") {
@@ -2432,7 +2900,10 @@
         '<div class="admin-field"><label>Label</label><input data-sl="' + i + '" value="' + esc(s.label) + '"></div>' +
         '<div class="admin-field toggle"><button type="button" class="switch ' + (s.desktop ? "on" : "") + '" data-sd="' + i + '"><i></i></button> Desktop</div>' +
         '<div class="admin-field toggle"><button type="button" class="switch ' + (s.mobile ? "on" : "") + '" data-sm="' + i + '"><i></i></button> Mobile</div></div>' +
-        '<div class="admin-field"><label>Ad code (pasted exactly — not rewritten)</label><textarea data-sc="' + i + '">' + esc(s.code) + "</textarea></div>" +
+        '<div class="admin-field"><label>Ad code (HTML / AdSense / Adsterra snippet)</label><textarea data-sc="' + i + '">' + esc(s.code || "") + "</textarea></div>" +
+        '<div class="form-grid two"><div class="admin-field"><label>Or paste ad link</label><input data-surl="' + i + '" value="' + esc(s.linkUrl || "") + '" placeholder="https://"></div>' +
+        '<div class="admin-field"><label>Ad image URL</label><input data-simg="' + i + '" value="' + esc(s.linkImage || "") + '" placeholder="https://.../banner.jpg"></div></div>' +
+        '<div class="admin-field"><label>CSS for this slot</label><textarea data-scss="' + i + '">' + esc(s.css || "") + "</textarea></div>" +
         '<div style="display:flex;gap:6px"><button class="btn btn-sm btn-ghost" type="button" data-su="' + i + '">Move up</button><button class="btn btn-sm btn-ghost" type="button" data-sdown="' + i + '">Move down</button></div></div>';
     }).join("");
     qsa("[data-se]").forEach(function (b) { b.onclick = function () { var i = Number(b.getAttribute("data-se")); state.draft.ads.slots[i].enabled = !state.draft.ads.slots[i].enabled; markDirty(); drawSlots(); }; });
@@ -2441,6 +2912,9 @@
     qsa("[data-sp]").forEach(function (b) { b.onchange = function () { state.draft.ads.slots[Number(b.getAttribute("data-sp"))].provider = b.value; markDirty(); }; });
     qsa("[data-sl]").forEach(function (b) { b.oninput = function () { state.draft.ads.slots[Number(b.getAttribute("data-sl"))].label = b.value; markDirty(); }; });
     qsa("[data-sc]").forEach(function (b) { b.oninput = function () { state.draft.ads.slots[Number(b.getAttribute("data-sc"))].code = b.value; markDirty(); }; });
+    qsa("[data-surl]").forEach(function (b) { b.oninput = function () { state.draft.ads.slots[Number(b.getAttribute("data-surl"))].linkUrl = b.value; markDirty(); }; });
+    qsa("[data-simg]").forEach(function (b) { b.oninput = function () { state.draft.ads.slots[Number(b.getAttribute("data-simg"))].linkImage = b.value; markDirty(); }; });
+    qsa("[data-scss]").forEach(function (b) { b.oninput = function () { state.draft.ads.slots[Number(b.getAttribute("data-scss"))].css = b.value; markDirty(); }; });
     qsa("[data-su]").forEach(function (b) { b.onclick = function () { var i = Number(b.getAttribute("data-su")); if (!i) return; var a = state.draft.ads.slots; var t = a[i-1]; a[i-1] = a[i]; a[i] = t; markDirty(); drawSlots(); }; });
     qsa("[data-sdown]").forEach(function (b) { b.onclick = function () { var i = Number(b.getAttribute("data-sdown")); var a = state.draft.ads.slots; if (i >= a.length - 1) return; var t = a[i+1]; a[i+1] = a[i]; a[i] = t; markDirty(); drawSlots(); }; });
   }
@@ -2591,8 +3065,10 @@
   }
   async function saveDraft() {
     state.cfg = deepClone(state.draft);
+    state.cfg.users = listUsers();
     applyTheme(state.cfg);
     bakePublishedTag(state.cfg);
+    persistUsers(state.cfg.users);
     try {
       if (state.cfg.security.encrypt) {
         if (!state.cryptoKey) {
@@ -2666,21 +3142,41 @@
     var cur = el("cur-pass").value;
     var n1 = el("new-pass").value;
     var n2 = el("new-pass2").value;
+    var me = (state.session && state.session.user) || getCred().user;
+    var users = listUsers();
+    var row = null;
+    var i;
+    for (i = 0; i < users.length; i++) if (users[i].username === me) row = users[i];
+    var curHash = await hashCred(me, cur);
+    var ok = false;
+    if (row && curHash === row.hash) ok = true;
     var cred = getCred();
-    var curHash = await hashCred(cred.user, cur);
-    if (curHash !== cred.hash) { toast("Current password is incorrect", "err"); return; }
+    if (!ok && me === cred.user && curHash === cred.hash) ok = true;
+    if (!ok) { toast("Current password is incorrect", "err"); return; }
     if (n1 && n1 !== n2) { toast("New passwords do not match", "err"); return; }
-    var nextUser = user || cred.user;
+    var nextUser = user || me;
     var nextPass = n1 || cur;
     if (nextPass.length < 8) { toast("Use at least 8 characters", "err"); return; }
     var h = await hashCred(nextUser, nextPass);
-    setCred(nextUser, h);
-    if (state.draft.security.encrypt) {
+    if (row) {
+      row.username = nextUser;
+      row.hash = h;
+    } else {
+      users.push({ id: uid("u"), username: nextUser, hash: h, role: "owner", permissions: ["all"], enabled: true });
+    }
+    persistUsers(users);
+    if (!row || row.role === "owner" || me === cred.user) setCred(nextUser, h);
+    if (state.session) {
+      state.session.user = nextUser;
+      ssSet(APP.sessionKey, JSON.stringify(state.session));
+    }
+    if (state.draft && state.draft.security.encrypt) {
       var dk = await deriveKey(nextPass);
       lsSet("stc_salt_v1", dk.salt);
       state.cryptoKey = dk.key;
     }
-    toast("Credentials updated", "ok");
+    toast("Username / password updated — it works right now. Sign in with the new details next time.", "ok");
+    renderAdminPage();
   }
 
   function loginHtml() {
@@ -2714,9 +3210,23 @@
     var pass = el("lp").value;
     var delay = Math.min(8000, 400 * Math.pow(2, lock.n));
     await new Promise(function (r) { setTimeout(r, delay); });
-    var cred = getCred();
-    var h = await hashCred(user, pass);
-    if (user !== cred.user || h !== cred.hash) {
+    var users = listUsers();
+    var found = null;
+    var i;
+    for (i = 0; i < users.length; i++) {
+      if (!users[i].enabled && users[i].enabled !== undefined) continue;
+      if (users[i].username === user && (await hashCred(user, pass)) === users[i].hash) {
+        found = users[i];
+        break;
+      }
+    }
+    if (!found) {
+      var cred = getCred();
+      if (user === cred.user && (await hashCred(user, pass)) === cred.hash) {
+        found = { username: cred.user, hash: cred.hash, role: "owner", permissions: ["all"], enabled: true };
+      }
+    }
+    if (!found) {
       lock.n += 1;
       var max = (state.cfg && state.cfg.security.lockAfter) || 5;
       if (lock.n >= max) lock.until = Date.now() + 5 * 60 * 1000;
@@ -2739,7 +3249,12 @@
       }
     }
     var mins = (state.cfg && state.cfg.security.sessionMinutes) || 30;
-    var sess = { user: user, exp: Date.now() + mins * 60 * 1000 };
+    var sess = {
+      user: found.username,
+      role: found.role || "staff",
+      permissions: found.permissions && found.permissions.length ? found.permissions : (found.role === "owner" ? ["all"] : []),
+      exp: Date.now() + mins * 60 * 1000
+    };
     ssSet(APP.sessionKey, JSON.stringify(sess));
     state.session = sess;
     el("admin-login").classList.add("hidden");
@@ -2884,6 +3399,7 @@
       renderPublic();
       bindChrome();
       bumpStat("visit");
+      recordGeo();
       gtagEvent("page_view");
       injectGA4();
       route();
@@ -2902,7 +3418,7 @@
   else init();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45d6482efba11bb',t:'MTc5MTIxMzQ0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45d9863dc76813f',t:'MTc5MTIxNTU2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 </body>
 </html>
